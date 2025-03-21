@@ -1,0 +1,382 @@
+openapi: 3.0.0
+info:
+  title: BootCoin API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost/api/v1
+
+paths:
+  /bootcoin/exchange/rates:
+    get:
+      operationId: getExchangeRates
+      summary: Get all exchange rates
+      responses:
+        200:
+          description: Exchange rates found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetExchangeRatesResponse'
+
+  /bootcoin/exchange/rates/{id}:
+    put:
+      operationId: updateExchangeRates
+      summary: Update exchange rates
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExchangeRateRequest'
+      responses:
+        200:
+          description: Rates updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdateExchangeRateResponse'
+
+  /bootcoin/exchange/requests/{requestId}:
+    put:
+      operationId: updateExchangeRequest
+      summary: Update exchange request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateExchangeRequestRequest'
+      responses:
+        200:
+          description: Exchange request updated
+        404:
+          description: Exchange request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseBase'
+
+  /bootcoin/exchange/requests/by-transaction-id/{transactionId}:
+    get:
+      operationId: getExchangeRequestByTransactionId
+      summary: Get exchange request by transaction id
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Exchange request found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetExchangeRequestByTransactionIdResponse'
+        404:
+          description: Exchange request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseBase'
+
+  /bootcoin/exchange/requests/pending:
+    get:
+      operationId: getPendingExchangeRequests
+      summary: Get pending exchange requests
+      responses:
+        200:
+          description: List of pending exchange requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetPendingExchangeRequestsResponse'
+
+  /bootcoin/exchange/requests/publish:
+    post:
+      operationId: createExchangeRequest
+      summary: Request bootcoin exchange
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateExchangeRequestRequest'
+      responses:
+        201:
+          description: Exchange request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateExchangeRequestResponse'
+
+  /bootcoin/exchange/requests/accept/{requestId}:
+    post:
+      operationId: acceptExchangeRequest
+      summary: Accept exchange request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Exchange request accepted
+
+  /bootcoin/wallets:
+    post:
+      operationId: createBootcoinWallet
+      summary: Create new wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBootcoinWalletRequest'
+      responses:
+        201:
+          description: Wallet created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateBootcoinWalletResponse'
+
+  /bootcoin/wallets/{walletId}:
+    put:
+      operationId: updateBootcoinWallet
+      summary: Update wallet
+      parameters:
+        - name: walletId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBootcoinWalletRequest'
+      responses:
+        200:
+          description: Wallet updated
+        404:
+          description: Wallet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseBase'
+
+  /bootcoin/wallets/by-user-id/{userId}:
+    get:
+      operationId: getWalletByUserId
+      summary: Get wallet by user id
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Wallet updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateBootcoinWalletResponse'
+        400:
+          description: Wallet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseBase'
+
+components:
+  schemas:
+    GetExchangeRatesResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/ExchangeRateResponse'
+
+    GetPendingExchangeRequestsResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+          amount:
+            type: number
+          buyRate:
+            type: number
+            format: double
+
+    GetPopulatedExchangeTransactionResponse:
+      type: object
+      properties:
+        exchangeTransaction:
+          type: object
+          properties:
+            id:
+              type: string
+            exchangeRequestId:
+              type: string
+            creationDate:
+              type: string
+              format: date-time
+        exchangeRequest:
+          type: object
+          properties:
+            id:
+              type: string
+            amount:
+              type: number
+            paymentMethod:
+              type: string
+
+    GetExchangeRequestByTransactionIdResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        amount:
+          type: number
+        paymentMethod:
+          type: string
+        buyRate:
+          type: number
+          format: double
+        requestOwnerUserId:
+          type: string
+        requestAccepterUserId:
+          type: string
+        status:
+          type: string
+        creationDate:
+          type: string
+          format: date-time
+
+    ExchangeRateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        buyRate:
+          type: number
+          format: double
+        sellRate:
+          type: number
+          format: double
+        currency:
+          type: string
+
+    UpdateExchangeRateRequest:
+      type: object
+      properties:
+        buyRate:
+          type: number
+          format: double
+        sellRate:
+          type: number
+          format: double
+
+    UpdateExchangeRateResponse:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/ExchangeRateResponse'
+
+    UpdateExchangeRequestRequest:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+
+    CreateBootcoinWalletRequest:
+      type: object
+      properties:
+        documentNumber:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+      required:
+        - documentNumber
+        - phone
+        - email
+
+    CreateBootcoinWalletResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        documentNumber:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        balance:
+          type: number
+        creationDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+
+    UpdateBootcoinWalletRequest:
+      type: object
+      properties:
+        balance:
+          type: number
+        status:
+          type: string
+          x-field-extra-annotation: '@com.project1.ms_bootcoin_service.validation.EnumNamePattern(regexp = "ACTIVE|INACTIVE")'
+
+    CreateExchangeRequestRequest:
+      type: object
+      properties:
+        buyRate:
+          type: number
+          format: double
+        amount:
+          type: number
+        paymentMethod:
+          type: string
+          x-field-extra-annotation: '@com.project1.ms_bootcoin_service.validation.EnumNamePattern(regexp = "YANKI|TRANSFER")'
+      required:
+        - buyRate
+        - amount
+        - paymentMethod
+
+    CreateExchangeRequestResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        amount:
+          type: number
+        paymentMethod:
+          type: string
+
+    ResponseBase:
+      type: object
+      properties:
+        message:
+          type: string
