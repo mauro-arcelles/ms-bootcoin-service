@@ -101,25 +101,35 @@ public class ExchangeRequestServiceImpl implements ExchangeRequestService {
                 if (exchangeRequest.getStatus() != ExchangeRequestStatus.PENDING) {
                     return Mono.error(new BadRequestException("EXCHANGE REQUEST is not pending"));
                 }
+
                 return securityUtils.getUserIdFromToken(exchange)
                     .flatMap(userId -> {
                         if (exchangeRequest.getRequestOwnerUserId().equals(userId)) {
                             return Mono.error(new BadRequestException("Cannot accept your own EXCHANGE REQUEST"));
                         }
 
-                        CreateTransactionRequest exchangeTransaction = CreateTransactionRequest.builder()
-                            .exchangeRequestId(exchangeRequest.getId())
-                            .build();
+                        return walletRepository.findByUserId(userId)
+                            .flatMap(w -> {
+                                if (w.getBalance().compareTo(exchangeRequest.getAmount()) < 0) {
+                                    return Mono.error(new BadRequestException("Insufficient balance in bootcoin wallet to accept exchange request"));
+                                }
+                                return Mono.just(w);
+                            })
+                            .flatMap(w -> {
+                                CreateTransactionRequest exchangeTransaction = CreateTransactionRequest.builder()
+                                    .exchangeRequestId(exchangeRequest.getId())
+                                    .build();
 
-                        log.info("Creating exchange transaction: {}", exchangeTransaction);
+                                log.info("Creating exchange transaction: {}", exchangeTransaction);
 
-                        return exchangeTransactionService.createTransaction(Mono.just(exchangeTransaction))
-                            .doOnSuccess(e -> log.info("Exchange transaction created: {}", e))
-                            .map(transaction -> {
-                                exchangeRequest.setTransactionId(transaction.getId());
-                                exchangeRequest.setRequestAccepterUserId(userId);
-                                exchangeRequest.setStatus(ExchangeRequestStatus.ACCEPTED);
-                                return exchangeRequest;
+                                return exchangeTransactionService.createTransaction(Mono.just(exchangeTransaction))
+                                    .doOnSuccess(ctr -> log.info("Exchange transaction created: {}", ctr))
+                                    .map(transaction -> {
+                                        exchangeRequest.setTransactionId(transaction.getId());
+                                        exchangeRequest.setRequestAccepterUserId(userId);
+                                        exchangeRequest.setStatus(ExchangeRequestStatus.ACCEPTED);
+                                        return exchangeRequest;
+                                    });
                             });
                     });
             })
