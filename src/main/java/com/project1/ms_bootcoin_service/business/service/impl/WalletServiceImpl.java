@@ -9,6 +9,7 @@ import com.project1.ms_bootcoin_service.model.CreateBootcoinWalletResponse;
 import com.project1.ms_bootcoin_service.model.UpdateBootcoinWalletRequest;
 import com.project1.ms_bootcoin_service.model.entity.WalletStatus;
 import com.project1.ms_bootcoin_service.repository.WalletRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ServerWebExchange;
@@ -17,6 +18,7 @@ import reactor.core.publisher.Mono;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class WalletServiceImpl implements WalletService {
 
     @Autowired
@@ -54,7 +56,10 @@ public class WalletServiceImpl implements WalletService {
                     })
             )
             .flatMap(walletRepository::save)
-            .map(walletMapper::getCreateWalletResponse);
+            .map(walletMapper::getCreateWalletResponse)
+            .doOnSubscribe(e -> log.info("Creating wallet"))
+            .doOnSuccess(e -> log.info("Wallet created"))
+            .doOnError(e -> log.error("Error creating wallet", e));
     }
 
     @Override
