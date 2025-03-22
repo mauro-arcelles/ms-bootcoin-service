@@ -45,6 +45,7 @@ public class WalletServiceImpl implements WalletService {
                                         + req.getDocumentNumber())))
                                     .then(Mono.just(req));
                             })
+                            .then(Mono.just(req))
                     )
             )
             .flatMap(req -> Mono.just(walletMapper.getCreateWalletEntity(req)))
