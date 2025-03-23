@@ -109,10 +109,13 @@ public class ExchangeRequestServiceImpl implements ExchangeRequestService {
                         }
 
                         return walletRepository.findByUserId(userId)
+                            .switchIfEmpty(Mono.error(new BadRequestException("Bootcoin wallet not found for user + " + userId)))
                             .flatMap(w -> {
                                 if (w.getBalance().compareTo(exchangeRequest.getAmount()) < 0) {
+                                    log.info("Insufficient balance in bootcoin wallet to accept exchange request: {}", exchangeRequest);
                                     return Mono.error(new BadRequestException("Insufficient balance in bootcoin wallet to accept exchange request"));
                                 }
+                                log.info("Sufficient balance in bootcoin wallet to accept exchange request: {}", exchangeRequest);
                                 return Mono.just(w);
                             })
                             .flatMap(w -> {
@@ -148,6 +151,7 @@ public class ExchangeRequestServiceImpl implements ExchangeRequestService {
                     return Mono.error(new BadRequestException("Error sending message to Kafka"));
                 }
             })
+            .doOnError(throwable -> log.error("There was an error when acceptinExchangeRequest", throwable))
             .doOnSuccess(e -> log.info("Exchange request accepted: {}", e))
             .then();
     }
