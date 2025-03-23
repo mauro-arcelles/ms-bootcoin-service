@@ -108,9 +108,12 @@ public class ExchangeRequestServiceImpl implements ExchangeRequestService {
                             return Mono.error(new BadRequestException("Cannot accept your own EXCHANGE REQUEST"));
                         }
 
+                        log.info("Finding bootcoin wallet for user: {}", userId);
+
                         return walletRepository.findByUserId(userId)
                             .switchIfEmpty(Mono.error(new BadRequestException("Bootcoin wallet not found for user + " + userId)))
                             .flatMap(w -> {
+                                log.info("Bootcoin wallet found: {}", w);
                                 if (w.getBalance().compareTo(exchangeRequest.getAmount()) < 0) {
                                     log.info("Insufficient balance in bootcoin wallet to accept exchange request: {}", exchangeRequest);
                                     return Mono.error(new BadRequestException("Insufficient balance in bootcoin wallet to accept exchange request"));
